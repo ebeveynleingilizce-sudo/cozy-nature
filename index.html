@@ -29,22 +29,23 @@ function rootOf(obj){while(obj&&obj.parent&&!objects.includes(obj))obj=obj.paren
 renderer.domElement.addEventListener('pointerdown',e=>{
  down={x:e.clientX,y:e.clientY,button:e.button};if(e.button!==0||active)return;
  point(e);const hits=ray.intersectObjects(objects,true);const target=hits.length?rootOf(hits[0].object):null;
- if(target){choose(target);if(ray.ray.intersectPlane(dragPlane,dragPoint)){drag={pointerId:e.pointerId,object:target,startX:e.clientX,startY:e.clientY,offsetX:target.position.x-dragPoint.x,offsetZ:target.position.z-dragPoint.z,moved:false};}}
-});
+ if(target){choose(target);if(ray.ray.intersectPlane(dragPlane,dragPoint)){drag={pointerId:e.pointerId,object:target,startX:e.clientX,startY:e.clientY,offsetX:target.position.x-dragPoint.x,offsetZ:target.position.z-dragPoint.z,moved:false};controls.enabled=false;renderer.domElement.setPointerCapture(e.pointerId);e.stopImmediatePropagation();}}
+},true);
 renderer.domElement.addEventListener('pointermove',e=>{
- if(!drag||e.pointerId!==drag.pointerId)return;
+ if(!drag||e.pointerId!==drag.pointerId)return;e.stopImmediatePropagation();
  if(!drag.moved&&Math.hypot(e.clientX-drag.startX,e.clientY-drag.startY)<5)return;
  drag.moved=true;controls.enabled=false;renderer.domElement.setPointerCapture(e.pointerId);
  point(e);if(ray.ray.intersectPlane(dragPlane,dragPoint)){drag.object.position.x=dragPoint.x+drag.offsetX;drag.object.position.z=dragPoint.z+drag.offsetZ;status('Taşınıyor: '+drag.object.userData.assetName)}
-});
+},true);
 function finishDrag(e){if(drag&&e.pointerId===drag.pointerId){if(drag.moved)status('Nesne taşındı');drag=null;controls.enabled=true;}down=null}
 renderer.domElement.addEventListener('pointerup',async e=>{
+ if(drag&&e.pointerId===drag.pointerId)e.stopImmediatePropagation();
  const wasDrag=drag?.moved;const isClick=down&&down.button===0&&Math.hypot(e.clientX-down.x,e.clientY-down.y)<=5;
  finishDrag(e);if(wasDrag||!isClick)return;
  point(e);
  if(active){const hit=ray.intersectObject(ground)[0];if(hit){const model=await add(active,[hit.point.x,0,hit.point.z]);if(model)choose(model)}}
  else{const hits=ray.intersectObjects(objects,true);choose(hits.length?rootOf(hits[0].object):null)}
-});
+},true);
 renderer.domElement.addEventListener('pointercancel',finishDrag);
 $('select').onclick=()=>{active=null;choose(null);catalog();status('Seç / taşı: nesneye tıkla, sürükleyerek taşı')};
 function edit(action){if(!selected){status('Önce bir nesne seç');return}action(selected);}
